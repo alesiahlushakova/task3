@@ -28,83 +28,98 @@ public class ApplicationRunner {
             String dateTime = optionsArray[0];
             String endDateTime = optionsArray[1];
             String pathToCSV = optionsArray[2];
-
+            String crimeLevelApi = optionsArray[3];
             List<Location> params = new CSVParser().parseCsv(pathToCSV);
 
-            params.parallelStream().forEach(param -> {
-                CrimeLevelAnalyzerService crimeLevelAnalyzerService = new CrimeLevelAnalyzerService();
-                String connectionString = "https://data.police.uk/api/crimes-street/all-crime?lat=";
-                connectionString += param.getLatitude() + "&lng=" + param.getLongitude();
-                if (dateTime != null && !dateTime.equals("")) {
-                    List<String> dateRangeList = DateRangeService.
-                            getDateRange(dateTime, endDateTime);
-                    for (String yearMonth : dateRangeList) {
-                        connectionString = "https://data.police.uk/api/crimes-street/all-crime?lat="
-                                + param.getLatitude() + "&lng=" + param.getLongitude();
-                        connectionString += "&date=" + yearMonth;
-                        crimeLevelAnalyzerService.processRequestForCrimeLevelApi(connectionString);
-                    }
-
-                } else {
-                    crimeLevelAnalyzerService.processRequestForCrimeLevelApi(connectionString);
-                }
-
-            });
-
-
-//            params.parallelStream().forEach(param -> {
-//
-//                CrimeLevelAnalyzerService crimeLevelAnalyzerService = new CrimeLevelAnalyzerService();
-//                String connectionString = "https://data.police.uk/api/stops-street?lat=";
-//                connectionString += param.getLatitude() + "&lng=" + param.getLongitude();
-//                if (dateTime != null && !dateTime.equals("")) {
-//                    List<String> dateRangeList = DateRangeService.
-//                            getDateRange(dateTime, endDateTime);
-//                    for (String yearMonth : dateRangeList) {
-//                        connectionString = "https://data.police.uk/api/stops-street?lat="
-//                                + param.getLatitude() + "&lng=" + param.getLongitude();
-//                        connectionString += "&date=" + yearMonth;
-//                        crimeLevelAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
-//                    }
-//
-//                } else {
-//                    crimeLevelAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
-//                }
-//            });
+            switch (crimeLevelApi) {
+                case "crime_level":  processCrimeLevelApi(params, dateTime, endDateTime);
+                break;
+                case "stop_at_location":  processStopsAtLocationApi(params, dateTime, endDateTime);
+                break;
+                case "stop_and_search" :  processStopsAndSearchesApi(dateTime, endDateTime);
+                break;
+                default: break;
+            }
 
 
 
-
-//            List<Force> forceList = new ArrayList<>();
-//
-//            ForceAnalyzerService forceAnalyzerService = new ForceAnalyzerService();
-//            String connectionStrings = "https://data.police.uk/api/forces";
-//            forceList = forceAnalyzerService.fetchForce(connectionStrings);
-//
-//
-//                   forceList.parallelStream().forEach(param -> {
-//                String connectionString = "https://data.police.uk/api/forces";
-//                if (dateTime != null && !dateTime.equals("")) {
-//                    List<String> dateRangeList = DateRangeService.
-//                            getDateRange(dateTime, endDateTime);
-//                    for (String yearMonth : dateRangeList) {
-//                        connectionString = "https://data.police.uk/api/stops-force";
-//                        connectionString += "?date=" + yearMonth + "&force=" + UrlParamConverter.convertStringToUrlParam(param.getName());
-//                        forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
-//                    }
-//                } else {
-//                    connectionString += UrlParamConverter.convertStringToUrlParam(param.getName());
-//                    forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
-//                }
-//
-//
-//                forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
-//                    });
-//
-//
         } catch (
                 ServiceException ex) {
             LOGGER.info(ex.getMessage());
         }
+    }
+
+    private static void processCrimeLevelApi(List<Location> params, String dateTime, String endDateTime) {
+        params.parallelStream().forEach(param -> {
+            CrimeLevelAnalyzerService crimeLevelAnalyzerService = new CrimeLevelAnalyzerService();
+            String connectionString = "https://data.police.uk/api/crimes-street/all-crime?lat=";
+            connectionString += param.getLatitude() + "&lng=" + param.getLongitude();
+            if (dateTime != null && !dateTime.equals("")) {
+                List<String> dateRangeList = DateRangeService.
+                        getDateRange(dateTime, endDateTime);
+                for (String yearMonth : dateRangeList) {
+                    connectionString = "https://data.police.uk/api/crimes-street/all-crime?lat="
+                            + param.getLatitude() + "&lng=" + param.getLongitude();
+                    connectionString += "&date=" + yearMonth;
+                    crimeLevelAnalyzerService.processRequestForCrimeLevelApi(connectionString);
+                }
+
+            } else {
+                crimeLevelAnalyzerService.processRequestForCrimeLevelApi(connectionString);
+            }
+
+        });
+    }
+
+    private static void processStopsAndSearchesApi(String dateTime, String endDateTime) {
+        List<Force> forceList = new ArrayList<>();
+
+        ForceAnalyzerService forceAnalyzerService = new ForceAnalyzerService();
+        String connectionStrings = "https://data.police.uk/api/forces";
+        forceList = forceAnalyzerService.fetchForce(connectionStrings);
+
+
+        forceList.parallelStream().forEach(param -> {
+            String connectionString = "https://data.police.uk/api/forces";
+            if (dateTime != null && !dateTime.equals("")) {
+                List<String> dateRangeList = DateRangeService.
+                        getDateRange(dateTime, endDateTime);
+                for (String yearMonth : dateRangeList) {
+                    connectionString = "https://data.police.uk/api/stops-force";
+                    connectionString += "?date=" + yearMonth + "&force=" + UrlParamConverter.convertStringToUrlParam(param.getName());
+                    forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
+                }
+            } else {
+                connectionString += UrlParamConverter.convertStringToUrlParam(param.getName());
+                forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
+            }
+
+
+            forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
+        });
+
+
+    }
+
+    private static void processStopsAtLocationApi(List<Location> params, String dateTime, String endDateTime) {
+        params.parallelStream().forEach(param -> {
+            ForceAnalyzerService forceAnalyzerService = new ForceAnalyzerService();
+
+            String connectionString = "https://data.police.uk/api/stops-street?lat=";
+            connectionString += param.getLatitude() + "&lng=" + param.getLongitude();
+            if (dateTime != null && !dateTime.equals("")) {
+                List<String> dateRangeList = DateRangeService.
+                        getDateRange(dateTime, endDateTime);
+                for (String yearMonth : dateRangeList) {
+                    connectionString = "https://data.police.uk/api/stops-street?lat="
+                            + param.getLatitude() + "&lng=" + param.getLongitude();
+                    connectionString += "&date=" + yearMonth;
+                    forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
+                }
+
+            } else {
+                forceAnalyzerService.processRequestForStopsAtLocationsApi(connectionString);
+            }
+        });
     }
 }

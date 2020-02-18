@@ -16,6 +16,12 @@ public class CMDOptionsParser {
         fileLocation.setRequired(true);
         options.addOption(fileLocation);
 
+        Option crimeLevel= new Option("api", "chosen_api", true, "implementation of api");
+        crimeLevel.setRequired(true);
+        options.addOption(crimeLevel);
+
+
+
         Option date = new Option(DATE, DATE, true, "date of crime");
         date.setRequired(false);
         options.addOption(date);
@@ -31,16 +37,18 @@ public class CMDOptionsParser {
         String path = null;
         String dateTimeStart = null;
         String dateTimeEnd = null;
+        String crimeLevelValue = null;
         try {
             cmd = parser.parse(options, args);
             path = cmd.getOptionValue("path");
             dateTimeStart = cmd.getOptionValue(DATE);
             dateTimeEnd = cmd.getOptionValue("dateEnd");
+            crimeLevelValue = cmd.getOptionValue("chosen_api");
 
         } catch (ParseException e) {
             formatter.printHelp("utility-name", options);
             throw new ServiceException(e.getMessage(), e.getCause());
         }
-        return new String[]{dateTimeStart, dateTimeEnd, path};
+        return new String[]{dateTimeStart, dateTimeEnd, path, crimeLevelValue};
     }
 }

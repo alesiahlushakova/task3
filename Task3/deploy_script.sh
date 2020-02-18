@@ -14,6 +14,14 @@ info()
         echo "-h or --help for help"
         echo "-m calls maven clean package phases"
         echo "-v disables silent start"
+        echo "-p print (n-2) rows of resultset"
+        echo "-n to name output file"
+        echo "-1 for most dangerous strees query"
+        echo "-2 for motth to month crime volume comparison"
+        echo "-3 for crimes with specified outcome status"
+        echo "-4 for stop and seacrh staticstics by ethnicity"
+        echo "-5 for most probable snapshor of crimes"
+        echo "-6 for stop and search correlation"
         exit 0
 }
 start_deploy()
@@ -64,39 +72,41 @@ then
         check_tables_exist
 else
         echo "tables alredy exist"
-     
-java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -jar /root/task3/alesia_hlushakova_bigdatalab/Task3/bigdata_task2/target/bigdata_task2-1.0-SNAPSHOT.jar -path=/root/task3/alesia_hlushakova_bigdatalab/Task3/bigdata_task2/data/LondonStations.csv -date=2019-07 -dateEnd=2019-09 
+
+java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -jar /root/3task/task3/Task3/bigdata_task2/target/bigdata_task2-1.0-SNAPSHOT.jar -path=/root/3task/task3/Task3/bigdata_task2/data/LondonStations.csv -date=2019-07 -dateEnd=2019-09 --chosen_api=crime_level
 
 
 fi
 }
 
-mvn_clean_package
+mvn_clean_package()
 {
-    mvn "$QUIET_VERBOSE" -f "/root/task3/alesia_hlushakova_bigdatalab/Task3/bigdata_task2" clean package   
+    mvn "$QUIET_VERBOSE" -f "/root/3task/task3/Task3/bigdata_task2" clean package
 }
 
-exec_query
+exec_query()
 {
-psql -U postgres -w -q -d $database -f "$QUERY" 
+
+psql -U postgres -w -q -d $database -f "$QUERY" > "$name"
+sed -n 1,"$rows"p "1.txt"
 }
 
-while getopts "dhvm123456" opt
+while getopts "dn:hp:rvm123456" opt
 do
 case $opt in
 d) dropDb;;
 h) info;;
 m) mvn_clean_package;;
-v)  QUIET_VERBOSE="-v";;
+n) name=${OPTARG};;
+v) QUIET_VERBOSE="-v";;
 1) QUERY="1.sql" ;;
 2) QUERY="2.sql";;
 3) QUERY="3.sql";;
 4) QUERY="4.sql";;
 5) QUERY="5.sql";;
 6) QUERY="6.sql";;
-
+p) rows=${OPTARG};;
+r) start_deploy;;
 esac
 done
-
-start_deploy
 exec_query
